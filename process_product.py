@@ -85,8 +85,11 @@ def handle_product_sync(products, shop):
         text_embeddings = embed_text(descriptions)
         if not product_exists(product["id"]):
             create_product(shop, product, text_embeddings, item_type, variant_data)
+        else:
+            update_product(shop, product, text_embeddings, item_type, variant_data)
 
     update_app_setup(shop, "COMPLETED")
+    return {"status": "success"}
 
 
 def handle_product_update(product, shop):
@@ -106,3 +109,4 @@ def handle_product_update(product, shop):
         update_product(shop, product, text_embeddings, item_type, variant_data)
     else:
         create_product(shop, product, text_embeddings, item_type, variant_data)
+    return {"status": "success"}
