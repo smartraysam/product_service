@@ -1,14 +1,10 @@
 """process product script."""
 import json
 import os
-from dotenv import load_dotenv
 from supabase import create_client, Client
 from openai import OpenAI
 from db import update_app_setup, create_update_product, create_update_variant
 from fashion import embed_text, embed_image
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Initialize Supabase client
 supabase: Client = create_client(

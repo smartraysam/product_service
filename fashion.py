@@ -12,11 +12,6 @@ import asyncio
 import urllib.parse
 import os
 
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 key = os.environ.get("SUPABASE_ANON_KEY")
 url = os.environ.get("SUPABASE_URL")
 

@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import requests
-from dotenv import load_dotenv
 from fashion_clip.fashion_clip import FashionCLIP
 from flask import Flask, jsonify, request
 from openai import OpenAI
@@ -13,7 +12,6 @@ from supabase.client import create_client
 
 from fashion import embed_image, embed_text, recommend_outfits_with_embeddings
 from process_product import handle_product_sync, handle_webhook
-load_dotenv()
 # set logging level
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
@@ -33,7 +31,6 @@ supabase_client = create_client(supabase_url, supabase_key)
 
 class TagResponse(BaseModel):
     """tag response model"""
-
     occasionTags: conlist(str, min_length=1) # type: ignore
     seasonalTags: conlist(str, min_length=1) # type: ignore
     styleTags: conlist(str, min_length=1) # type: ignore
@@ -301,7 +298,6 @@ async def get_reccs(shop_url, inputs):
     # Gather results asynchronously
     results = await asyncio.gather(*tasks)
     return results
-
 
 @app.route("/embed-text", endpoint="embed-text", methods=["POST"])
 def embed_text_req():
