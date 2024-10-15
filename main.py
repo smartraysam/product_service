@@ -12,7 +12,7 @@ from openai import OpenAI
 from pydantic import BaseModel, conlist
 from supabase.client import create_client
 from fashion import embed_image, embed_text, recommend_outfits_with_embeddings
-from process_product import handle_product_sync, handle_webhook
+from process_product import handle_product_sync, handle_product_update
 
 load_dotenv()
 # set logging level
@@ -229,6 +229,7 @@ def require_token(func):
 @app.route("/fetch_products_api", endpoint="fetch_products_api", methods=["GET"])
 @require_token
 def fetch_products_api():
+    """Fetch products from Shopify"""   
     shop_url = request.args.get("shop_url")
     access_token = request.args.get("access_token")
 
@@ -252,19 +253,18 @@ def fetch_products_api():
         )
 
 
-@app.route("/update-products", endpoint="update-products", methods=["POST"])
+@app.route("/update_products_api", endpoint="update-products", methods=["POST"])
 @require_token
 def update_products():
     """Update products in Shopify based on webhook events"""
     data = request.get_json()
-    shop = data.get("shop_url")
-    access_token = data.get("access_token")
+    shop = data.get("shop")
     product = data.get("product")
 
-    if not shop or not access_token or not product:
-        return jsonify({"error": "Missing shop_url or access_token"}), 400
+    if not shop or not product:
+        return jsonify({"error": "Missing shop or product"}), 400
 
-    return asyncio.run(handle_webhook(product, shop))
+    return asyncio.run(handle_product_update(product, shop))
 
 
 @app.route("/fetch-suggestions", endpoint="fetch-suggestions", methods=["POST"])
@@ -316,6 +316,7 @@ def embed_image_req():
     """Embed image and return the embedding"""
     body = request.get_json()
     image = body.get("imageUrl")
+    print(image)
     return jsonify(embed_image(image)), 200
 
 

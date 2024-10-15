@@ -1,4 +1,5 @@
 """db operation script"""
+
 import os
 import logging
 from supabase import create_client
@@ -30,66 +31,112 @@ def update_app_setup(shop_url, status):
             .eq("shop", shop_url)
             .execute()
         )
-
     except Exception as e:
         logging.error("Database operation failed: %s", e)
         raise
 
-
-def create_update_product(shop, product, text_embeddings, item_type):
-    """create/update product in supabase"""
+def product_exists(product_id: str) -> bool:
+    """Check if a product exists in Supabase by product_id."""
     try:
         response = (
             supabase_client.table("products")
-            .upsert(
-                {
-                    "shop": shop,
-                    "product_id": product["id"],
-                    "content": {
-                        "title": product["title"],
-                        "description": product["description"],
-                        "onlineStoreUrl": product["onlineStoreUrl"],
-                        "featureImage": product["featuredImage"]["url"],
-                        "priceRange": product["priceRange"],
-                    },
-                    "description_embedding": text_embeddings,
-                    "product_type": item_type.lower(),
-                },
-                on_conflict=["product_id"],  # Use 'product_id' as the conflict key
-            )
+            .select("product_id")
+            .eq("product_id", product_id)
+            .limit(1)
             .execute()
         )
-
-        if response.error:
-            logging.error("Failed to insert product: %s", response.error)
-        else:
-            print(f"Product {product['id']} inserted successfully")
+        return len(response.data) > 0
 
     except Exception as e:
         logging.error("Database operation failed: %s", e)
         raise
 
 
-def create_update_variant(product, variant, image_embedding):
-    """create/update variant in supabase"""
+def upsert_variants(product_id: str, variant_data: list):
+    """Insert product variants into the 'variants' table."""
     try:
-        response = (
+        _ = (
             supabase_client.table("variants")
-            .upsert(
+            .upsert(variant_data, on_conflict=["variant_id"])
+            .execute()
+        )
+
+        print(f"Variants for product {product_id} inserted successfully")
+
+    except Exception as e:
+        logging.error("Database operation failed: %s", e)
+        raise
+
+def create_product(shop, product, text_embeddings, item_type, variant_data):
+    """Create a product in Supabase."""
+    try:
+        content = {
+            "title": product["title"],
+            "description": product["description"],
+            "onlineStoreUrl": product["onlineStoreUrl"],
+            "featureImage": product["featuredImage"]["url"],
+            "priceRange": product["priceRange"],
+        }
+
+        # Insert product into 'products' table
+        _= (
+            supabase_client.table("products")
+            .insert(
                 {
+                    "shop": shop,
                     "product_id": product["id"],
-                    "variant_id": variant["node"]["id"],
-                    "content": variant["node"],
-                    "image_embedding": image_embedding,
-                },
-                on_conflict=["variant_id"],  # Conflict detection on 'variant_id'
+                    "content": content,
+                    "description_embedding": text_embeddings,
+                    "product_type": item_type.lower(),
+                }
             )
             .execute()
         )
-        if response.error:
-            logging.error("Failed to insert product: %s", response.error)
-        else:
-            print(f"Product variant {variant['node']['id']} inserted successfully")
+
+        print(f"Product {product['id']} inserted successfully")
+
+        if variant_data:
+            upsert_variants(product["id"], variant_data)
+
+    except Exception as e:
+        logging.error("Database operation failed: %s", e)
+        raise
+
+
+def update_product(shop, product, text_embeddings, item_type, variant_data):
+    """Update product in Supabase"""
+    try:
+        content = {
+            "title": product["title"],
+            "description": product["description"],
+            "onlineStoreUrl": product["onlineStoreUrl"],
+            "featureImage": product["featuredImage"]["url"],
+            "priceRange": product["priceRange"],
+        }
+        print(content)
+        variant_data = variant_data if variant_data else []
+
+        # Prepare the update data
+        update_data = {
+            "shop": shop,
+            "content": content,
+            "description_embedding": text_embeddings,
+            "product_type": item_type.lower(),
+        }
+
+        # Execute the update
+        _ = (
+            supabase_client.table("products")
+            .update(update_data)
+            .eq("product_id", product["id"])
+            .execute()
+        )
+
+        print(f"Product {product['id']} updated successfully")
+
+        # Handle variants update (if required)
+        if variant_data:
+            upsert_variants(product["id"], variant_data)
 
     except Exception as e:
         logging.error("Database operation failed: %s", e)

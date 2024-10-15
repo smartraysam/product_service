@@ -1,9 +1,10 @@
 """process product script."""
+
 import json
 import os
 from supabase import create_client, Client
 from openai import OpenAI
-from db import update_app_setup, create_update_product, create_update_variant
+from db import update_app_setup, create_product, product_exists, update_product
 from fashion import embed_text, embed_image
 
 supabase: Client = create_client(
@@ -12,6 +13,7 @@ supabase: Client = create_client(
 
 # Initialize OpenAI client
 openai = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
+
 
 def fetch_product_category(product):
     """Fetch product category using OpenAI GPT."""
@@ -39,56 +41,68 @@ def fetch_product_category(product):
         return None
 
 
-def process_variant(variant, product):
+def process_variant(variant, product, image_embedding_cache):
     """Process a product variant, including embedding images."""
     variant_option_map = {}
-    image_embedding_cache = {}
-
     for option in variant["node"]["selectedOptions"]:
-        variant_option_map.setdefault(option["name"], []).append(option["value"])
-
+        variant_option_map.setdefault(option["name"], []).append(option["value"]) 
     image_url = (
-        variant["node"].get("image", {}).get("url", product["featuredImage"]["url"])
+        variant["node"]["image"]["url"]
+        if variant["node"].get("image") is not None
+        else product["featuredImage"]["url"]
     )
     image_embedding = image_embedding_cache.get(image_url)
-
+    print("product Image URL:", image_url)
     if not image_embedding:
         try:
-            # image_embedding = embed_image(image_url)
-            image_embedding = []
+            image_embedding = embed_image(image_url)
             image_embedding_cache[image_url] = image_embedding
         except Exception as e:
             print(f"Error embedding image for {image_url}: {e}")
             image_embedding = []
 
-    create_update_variant(product, variant, image_embedding)
+    return {
+        "product_id": product["id"],
+        "variant_id": variant["node"]["id"],
+        "content": variant["node"],
+        "image_embedding": image_embedding,
+    }
 
 
 def handle_product_sync(products, shop):
     """Sync products from Shopify to Supabase and compute embeddings."""
-    update_app_setup(shop, "IN_PROGRESS")
-
+    image_embedding_cache = {}
     for product in products:
         item_type = fetch_product_category(product)
         print(item_type)
-
+        variant_data = []
         for variant in product["variants"]["edges"]:
-            process_variant(variant, product)
+            variant_data.append(
+                process_variant(variant, product, image_embedding_cache)
+            )
 
         descriptions = f"{product['title']} - {product['description']}"
         text_embeddings = embed_text(descriptions)
-        create_update_product(shop, product, text_embeddings, item_type)
+        if not product_exists(product["id"]):
+            create_product(shop, product, text_embeddings, item_type, variant_data)
+
     update_app_setup(shop, "COMPLETED")
 
 
-def handle_webhook(product, shop):
-    """handle webhook event."""
+def handle_product_update(product, shop):
+    """Sync products from Shopify to Supabase and compute embeddings."""
+    image_embedding_cache = {}
+
     item_type = fetch_product_category(product)
     print(item_type)
-
+    variant_data = []
     for variant in product["variants"]["edges"]:
-        process_variant(variant, product)
+        variant_data.append(process_variant(variant, product, image_embedding_cache))
 
     descriptions = f"{product['title']} - {product['description']}"
     text_embeddings = embed_text(descriptions)
-    create_update_product(shop, product, text_embeddings, item_type)
+
+    if product_exists(product["id"]):
+        update_product(shop, product, text_embeddings, item_type, variant_data)
+    else:
+        create_product(shop, product, text_embeddings, item_type, variant_data)

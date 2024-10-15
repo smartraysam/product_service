@@ -8,6 +8,6 @@ langchain
 langchain_openai
 jq
 pydantic
-fashion_clip
+fashion_clip==0.2.2
 scipy
 python-dotenv
