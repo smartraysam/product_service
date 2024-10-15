@@ -6,14 +6,12 @@ from openai import OpenAI
 from db import update_app_setup, create_update_product, create_update_variant
 from fashion import embed_text, embed_image
 
-# Initialize Supabase client
 supabase: Client = create_client(
     os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_ANON_KEY")
 )
 
 # Initialize OpenAI client
 openai = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
-
 
 def fetch_product_category(product):
     """Fetch product category using OpenAI GPT."""

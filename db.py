@@ -1,9 +1,7 @@
 """db operation script"""
-
 import os
 import logging
 from supabase import create_client
-
 
 key = os.environ.get("SUPABASE_ANON_KEY")
 url = os.environ.get("SUPABASE_URL")
