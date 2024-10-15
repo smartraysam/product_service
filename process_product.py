@@ -54,7 +54,8 @@ def process_variant(variant, product):
 
     if not image_embedding:
         try:
-            image_embedding = embed_image(image_url)
+            # image_embedding = embed_image(image_url)
+            image_embedding = []
             image_embedding_cache[image_url] = image_embedding
         except Exception as e:
             print(f"Error embedding image for {image_url}: {e}")
