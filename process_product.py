@@ -43,9 +43,6 @@ def fetch_product_category(product):
 
 def process_variant(variant, product, image_embedding_cache):
     """Process a product variant, including embedding images."""
-    variant_option_map = {}
-    for option in variant["node"]["selectedOptions"]:
-        variant_option_map.setdefault(option["name"], []).append(option["value"]) 
     image_url = (
         variant["node"]["image"]["url"]
         if variant["node"].get("image") is not None
