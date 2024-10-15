@@ -1,4 +1,5 @@
 """main script."""
+
 import asyncio
 import json
 import logging
@@ -34,11 +35,11 @@ supabase_client = create_client(supabase_url, supabase_key)
 class TagResponse(BaseModel):
     """tag response model"""
 
-    occasionTags: conlist(str, min_length=1) # type: ignore
-    seasonalTags: conlist(str, min_length=1) # type: ignore
-    styleTags: conlist(str, min_length=1) # type: ignore
-    descriptionAnalysis: conlist(str, min_length=1) # type: ignore
-    colourAndTone: conlist(str, min_length=1) # type: ignore
+    occasionTags: conlist(str, min_length=1)  # type: ignore
+    seasonalTags: conlist(str, min_length=1)  # type: ignore
+    styleTags: conlist(str, min_length=1)  # type: ignore
+    descriptionAnalysis: conlist(str, min_length=1)  # type: ignore
+    colourAndTone: conlist(str, min_length=1)  # type: ignore
     productCategory: str
 
 
@@ -204,7 +205,7 @@ def generate_tags(product_content):
 
         return tags
 
-    except (Exception) as e:
+    except Exception as e:
         print(f"Error generating or validating tags {product_id}: {e}")
 
     return {}
@@ -239,17 +240,16 @@ def fetch_products_api():
         "Content-Type": "application/json",
         "X-Shopify-Access-Token": access_token,
     }
-    # try:
-    print(f"using url {url}")
-    products = paginate_through_all_products(url=url, headers=headers)
-    return asyncio.run(handle_product_sync(products, shop_url))
-    # return jsonify(products), 200
-    # except Exception as e:
-    #     logging.error(f"Error processing products: {e}")
-    #     return (
-    #         jsonify({"error": "Failed to fetch products due to an internal error"}),
-    #         500,
-    #     )
+    try:
+        print(f"using url {url}")
+        products = paginate_through_all_products(url=url, headers=headers)
+        return asyncio.run(handle_product_sync(products, shop_url))
+    except Exception as e:
+        logging.error("Error processing products: %s", e)
+        return (
+            jsonify({"error": "Failed to fetch products due to an internal error"}),
+            500,
+        )
 
 
 @app.route("/update-products", endpoint="update-products", methods=["POST"])
@@ -318,10 +318,12 @@ def embed_image_req():
     image = body.get("imageUrl")
     return jsonify(embed_image(image)), 200
 
+
 @app.route("/")
 def hello():
     """test endpoint"""
     return "Hello, Docker!"
+
 
 if __name__ == "__main__":
     app.run(
