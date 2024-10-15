@@ -1,0 +1,13 @@
+Flask
+requests
+Cmake
+supabase
+openai
+langchain
+langchain_openai
+jq
+pydantic
+gunicorn
+fashion_clip
+scipy
+python-dotenv
