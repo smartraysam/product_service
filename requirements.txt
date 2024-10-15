@@ -7,7 +7,6 @@ langchain
 langchain_openai
 jq
 pydantic
-gunicorn
+gunicorn==20.1.0
 fashion_clip
 scipy
-python-dotenv
