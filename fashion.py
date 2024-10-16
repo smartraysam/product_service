@@ -23,11 +23,15 @@ url = os.environ.get("SUPABASE_URL")
 model = FashionCLIP("justin-shopcapsule/screenshot-fashion-clip-finetuned")
 supabase: Client = create_client(url, key)
 
+
 async def fetch_embeddings_async(shop, item_type):
     """Make asynchronous HTTP requests using aiohttp, or async database queries"""
     async with aiohttp.ClientSession() as session:
-        async with session.get(f'https://ugbtvxiaydwqsjspaghc.supabase.co/rest/v1/products?select=%2A%2C%20variants%28%2A%29&shop=eq.{urllib.parse.quote_plus(shop)}&product_type=eq.{item_type}&apikey={urllib.parse.quote_plus(key)}') as response:
+        async with session.get(
+            f"https://ugbtvxiaydwqsjspaghc.supabase.co/rest/v1/products?select=%2A%2C%20variants%28%2A%29&shop=eq.{urllib.parse.quote_plus(shop)}&product_type=eq.{item_type}&apikey={urllib.parse.quote_plus(key)}"
+        ) as response:
             return await response.json()
+
 
 def generate_embedding(user_input):
     """Generate embedding for user input"""
@@ -41,6 +45,7 @@ def generate_embedding(user_input):
         user_embedding = user_embedding.flatten()
 
     return user_embedding
+
 
 async def recommend_outfits_with_embeddings(user_embedding, shop, item_type):
     """Recommend products based on embeddings"""
@@ -59,8 +64,8 @@ async def recommend_outfits_with_embeddings(user_embedding, shop, item_type):
 
         for variant in product["variants"]:
             # Calculate cosine similarity for both image and text embeddings
-            image_embedding = np.array(variant['image_embedding'])
-            image_similarity = 1 - cosine(user_embedding, image_embedding)  
+            image_embedding = np.array(variant["image_embedding"])
+            image_similarity = 1 - cosine(user_embedding, image_embedding)
             # Aggregate similarity (you can use an average or weighted sum)
             aggregated_similarity = (image_similarity + text_similarity) / 2
 
@@ -76,13 +81,15 @@ async def recommend_outfits_with_embeddings(user_embedding, shop, item_type):
             )
 
     # Sort recommendations by similarity (descending order)
-    recommendations = sorted(recommendations, key=lambda x: x['similarity'], reverse=True)
+    recommendations = sorted(
+        recommendations, key=lambda x: x["similarity"], reverse=True
+    )
     return recommendations[0]
 
 
-def get_image_from_url(url):
+def get_image_from_url(urlimage):
     """Get image from url and return PIL image"""
-    response = requests.get(url)
+    response = requests.get(urlimage, timeout=60)
     image = Image.open(io.BytesIO(response.content)).convert("RGB")
     return image
 
