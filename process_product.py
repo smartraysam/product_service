@@ -4,8 +4,9 @@ import json
 import os
 from supabase import create_client, Client
 from openai import OpenAI
+from flask import jsonify
 from db import update_app_setup, create_product, product_exists, update_product
-from fashion import embed_text, embed_image
+from utils import get_image_embedding, get_text_embedding
 
 supabase: Client = create_client(
     os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_ANON_KEY")
@@ -52,7 +53,7 @@ def process_variant(variant, product, image_embedding_cache):
     print("product Image URL:", image_url)
     if not image_embedding:
         try:
-            image_embedding = embed_image(image_url)
+            image_embedding = get_image_embedding(image_url)
             image_embedding_cache[image_url] = image_embedding
         except Exception as e:
             print(f"Error embedding image for {image_url}: {e}")
@@ -79,14 +80,12 @@ def handle_product_sync(products, shop):
             )
 
         descriptions = f"{product['title']} - {product['description']}"
-        text_embeddings = embed_text(descriptions)
+        text_embeddings = get_text_embedding(descriptions)
         if not product_exists(product["id"]):
             create_product(shop, product, text_embeddings, item_type, variant_data)
-        else:
-            update_product(shop, product, text_embeddings, item_type, variant_data)
 
     update_app_setup(shop, "COMPLETED")
-    return {"status": "success"}
+    return jsonify({"message": "Product updated successfully"})
 
 
 def handle_product_update(product, shop):
@@ -100,10 +99,10 @@ def handle_product_update(product, shop):
         variant_data.append(process_variant(variant, product, image_embedding_cache))
 
     descriptions = f"{product['title']} - {product['description']}"
-    text_embeddings = embed_text(descriptions)
+    text_embeddings = get_text_embedding(descriptions)
 
     if product_exists(product["id"]):
         update_product(shop, product, text_embeddings, item_type, variant_data)
     else:
         create_product(shop, product, text_embeddings, item_type, variant_data)
-    return {"status": "success"}
+    return jsonify({"message": "Product updated successfully"})
