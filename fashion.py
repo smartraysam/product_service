@@ -89,7 +89,7 @@ async def recommend_outfits_with_embeddings(user_embedding, shop, item_type):
 
 def get_image_from_url(urlimage):
     """Get image from url and return PIL image"""
-    response = requests.get(urlimage, timeout=60)
+    response = requests.get(urlimage, timeout=120)
     image = Image.open(io.BytesIO(response.content)).convert("RGB")
     return image
 

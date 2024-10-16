@@ -10,7 +10,7 @@ def get_image_embedding(image_url):
             "https://populatedb-production.up.railway.app/embed-image",
             json={"imageUrl": image_url},
             headers={"Content-Type": "application/json"},
-            timeout=60,
+            timeout=120,
         )
 
         image_embedding = response.json()
@@ -25,7 +25,7 @@ def get_text_embedding(description):
         "https://populatedb-production.up.railway.app/embed-text",
         json={"description": f"{description}"},
         headers={"Content-Type": "application/json"},
-        timeout=60
+        timeout=120
     )
 
     text_embedding = response.json()
